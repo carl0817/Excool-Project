@@ -1,0 +1,66 @@
+import numpy as np
+import os
+
+X = np.loadtxt('/local_raid1/03_user/sunghyoung/01_project/03_Encoding_decoding/01_NeuralEncodingDecoding/lay_feat.txt')
+
+percp = 0
+init_flag = 0
+
+varargin = ['var', 0.99]
+
+# Keywords
+for iter in range(len(varargin), 2): 
+
+    Keyword = varargin[iter]
+    Value   = varargin[iter+1]
+
+    if Keyword == 'var':
+
+        percp = Value 
+
+    elif Keyword == 'init':
+
+        U0 = Value[1]
+        S0 = Value[2]
+        init_flag = 1
+
+    else:
+
+        print(f'WARNING: amri_sig_isvd(): unknown keyword {Keyword}')
+        
+    
+
+
+# updating svd
+if init_flag == 1:
+
+    A = X - U0*(U0.conj().T*X)
+    [Q,R] = np.linalg.qr(A,0)
+
+    k = U0.shape[1]
+    k0 = k
+    r = R.shape[0]
+    
+    [U, S] = np.linalg.svd([S0, U0.conj().T*X, np.zeros((r,k)), R], 0)
+    U = [U0, Q]*U
+
+else:
+    [U, S] = np.linalg.svd(X,0)
+    k = min(X.shape[0],X.shape[1])
+
+
+if percp>0:
+    v = np.diag(S)**2
+    vs = np.cumsum(v)
+    vs = vs/vs(-1)
+    k = np.nonzero(vs>percp,1,'first')
+    if os.path.isfile('k0','var'):
+        k = max(k,k0)
+    
+
+
+U = U[:, 1:k+1]
+S = S[1:k+1, 1:k+1]
+
+
+
